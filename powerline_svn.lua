@@ -14,6 +14,12 @@ local segmentColors = {
     }
 }
 
+local svnStatuses = {
+    clean = 0,
+    dirty = 1,
+    conflict = 2
+}
+
 ---
 -- Finds out the name of the current branch
 -- @return {false|svn branch name}
@@ -43,17 +49,21 @@ end
 
 ---
 -- Gets the status of working dir
--- @return {bool} indicating true for clean, false for dirty
+-- @return {svnStatuses}
 ---
 function get_svn_status()
     local file = io.popen("svn status -q")
+    local dirty = false
     for line in file:lines() do
-        file:close()
-        return false
+        dirty = true
+        local m = line:match("^C")
+        if m then
+            file:close()
+            return svnStatuses.conflict
+        end
     end
     file:close()
-
-    return true
+    return dirty and svnStatuses.dirty or svnStatuses.clean
 end
 
 ---
@@ -135,7 +145,16 @@ local function init()
             local svnStatus = get_svn_status()
             segment.text = " "..plc_git_branchSymbol.." "..branch.." "
 
-            if svnStatus then
+            if svnStatus == svnStatuses.conflict then
+                segment.textColor = segmentColors.conflict.text
+                segment.fillColor = segmentColors.conflict.fill
+                if plc_git_conflictSymbol then
+                    segment.text = segment.text..plc_git_conflictSymbol
+                end
+                return
+            end
+
+            if svnStatus == svnStatuses.clean then
                 segment.textColor = segmentColors.clean.text
                 segment.fillColor = segmentColors.clean.fill
                 segment.text = segment.text..""
