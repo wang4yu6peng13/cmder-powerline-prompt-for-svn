@@ -137,36 +137,33 @@ local segment = {
 -- Sets the properties of the Segment object, and prepares for a segment to be added
 ---
 local function init()
-    segment.isNeeded = get_svn_dir()
+    local branch = get_svn_branch(git_dir)
+    segment.isNeeded = branch and get_svn_dir()
     if segment.isNeeded then
-        -- if we're inside of svn repo then try to detect current branch
-        local branch = get_svn_branch(git_dir)
-        if branch then
-            local svnStatus = get_svn_status()
-            segment.text = " "..plc_git_branchSymbol.." "..branch.." "
+        local svnStatus = get_svn_status()
+        segment.text = " "..plc_git_branchSymbol.." "..branch.." "
 
-            if svnStatus == svnStatuses.conflict then
-                segment.textColor = segmentColors.conflict.text
-                segment.fillColor = segmentColors.conflict.fill
-                if plc_git_conflictSymbol then
-                    segment.text = segment.text..plc_git_conflictSymbol
-                end
-                return
+        if svnStatus == svnStatuses.conflict then
+            segment.textColor = segmentColors.conflict.text
+            segment.fillColor = segmentColors.conflict.fill
+            if plc_git_conflictSymbol then
+                segment.text = segment.text..plc_git_conflictSymbol
             end
-
-            if svnStatus == svnStatuses.clean then
-                segment.textColor = segmentColors.clean.text
-                segment.fillColor = segmentColors.clean.fill
-                segment.text = segment.text..""
-                return
-            end
-
-            segment.textColor = segmentColors.dirty.text
-            segment.fillColor = segmentColors.dirty.fill
-            segment.text = segment.text.."± "
+            return
         end
+
+        if svnStatus == svnStatuses.clean then
+            segment.textColor = segmentColors.clean.text
+            segment.fillColor = segmentColors.clean.fill
+            segment.text = segment.text..""
+            return
+        end
+
+        segment.textColor = segmentColors.dirty.text
+        segment.fillColor = segmentColors.dirty.fill
+        segment.text = segment.text.."± "
     end
-end 
+end
 
 ---
 -- Uses the segment properties to add a new segment to the prompt
